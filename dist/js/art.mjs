@@ -19,17 +19,19 @@ export function drawAtlasRuhl(ctx, x, y, { time = 0, walking = false, airborne =
   return true;
 }
 
-export function drawRuhlHead(ctx, x, y, width = 44, angle = -Math.PI / 2) {
+export function drawRuhlHead(ctx, x, y, width = 44, angle = -Math.PI / 2, front = false) {
   if (!atlas) return;
   ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(angle); ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(atlas, 208, 10, 96, 114, -width / 2, -width * 114 / 192, width, width * 114 / 96);
+  if (front) ctx.drawImage(atlas, 1233, 530, 98, 112, -width / 2, -width * 112 / 196, width, width * 112 / 98);
+  else ctx.drawImage(atlas, 208, 10, 96, 114, -width / 2, -width * 114 / 192, width, width * 114 / 96);
   ctx.restore();
 }
 
-export function drawBenchTorso(ctx, x, y) {
+export function drawBenchTorso(ctx, x, y, { angle = -Math.PI / 2, width = 64, height = 120, front = false } = {}) {
   if (!atlas) return;
-  ctx.save(); ctx.translate(x, y); ctx.rotate(-Math.PI / 2); ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(atlas, 196, 108, 112, 247, -32, -60, 64, 120);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.imageSmoothingEnabled = false;
+  if (front) ctx.drawImage(atlas, 1217, 625, 126, 245, -width / 2, -height / 2, width, height);
+  else ctx.drawImage(atlas, 196, 108, 112, 247, -width / 2, -height / 2, width, height);
   ctx.restore();
 }
 
@@ -47,8 +49,9 @@ export function drawMuscle(ctx, a, b, width, part = 'upper', far = false) {
   ctx.restore(); ctx.strokeStyle = '#392924'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
 }
 
-export function drawBenchShoe(ctx, x, y, width = 45) {
+export function drawBenchShoe(ctx, x, y, width = 45, mirrored = false) {
   if (!atlas) return;
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(atlas, 254, 442, 100, 58, x - width / 2, y - width * .58, width, width * .58);
+  ctx.save(); ctx.translate(x, y); ctx.scale(mirrored ? -1 : 1, 1); ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(atlas, 254, 442, 100, 58, -width / 2, -width * .58, width, width * .58);
+  ctx.restore();
 }

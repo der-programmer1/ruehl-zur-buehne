@@ -24,6 +24,10 @@ Becher, cremige Füllung, Messstriche und WHEY-Etikett.
 
 Die Bankdrück-Szene wird in jedem Frame neu gezeichnet. Schulter, Ellenbogen und
 Handgelenk bilden zwei verbundene Armsegmente; die Hände folgen derselben Hantel.
+Die Kamera blickt vom Fußende auf die längs liegende Bank. Die Langhantel verläuft
+quer zur Körperachse. `bench-geometry.mjs` berechnet Körper, Stange und beide Arme
+in denselben Raumkoordinaten und projiziert sie gemeinsam. Beim Absenken sinken
+die Ellenbogen neben die Bank; die Unterarme bleiben unter den Griffen.
 Die Zeitkurve in `bench.mjs` steuert kontrolliertes Absenken, Pause auf der Brust,
 Hochdrücken und drei vollständige Wiederholungen. Hintergrund, Bank, Rack,
 Hantelscheiben und Körper sind Canvas-Grafik. Die Spielgrafik zeigt pro Level
