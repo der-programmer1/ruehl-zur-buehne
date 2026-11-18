@@ -140,7 +140,10 @@ export function stepGame(s, input = {}, dt = 1 / 60) {
     }
   }
   if (p.y > 425) { hurt(s, true); return; }
-  for (const pickup of s.pickups) if (!pickup.collected && overlaps(p, pickup)) {
+  // The new sprite includes the head and broad shoulders above the movement box.
+  // Visible contact with a shake should collect it without changing platform physics.
+  const grabBox = { x: p.x - 12, y: p.y - 40, w: p.w + 24, h: p.h + 40 };
+  for (const pickup of s.pickups) if (!pickup.collected && overlaps(grabBox, pickup)) {
     pickup.collected = true; s.shakes++; s.score += 100;
     const added = Math.min(25, 100 - s.pump); s.pump += added;
     emit(s, 'pickup', { x: pickup.x, y: pickup.y, added });

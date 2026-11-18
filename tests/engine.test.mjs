@@ -10,6 +10,15 @@ test('Shakes geben genau einmal Punkte und höchstens 100 Pump', () => {
   assert.equal(s.pump, 100); assert.equal(s.score, 100); assert.equal(s.shakes, 1);
   stepGame(s); assert.equal(s.score, 100); assert.equal(s.shakes, 1);
 });
+test('sichtbarer Kontakt mit Kopf und Schultern der größeren Figur sammelt Shakes ein', () => {
+  const s = createGame();
+  const pickup = s.pickups.find(p => p.y === LEVELS[0].platforms[0].y - 30);
+  s.player.x = pickup.x;
+  assert.ok(pickup.y + pickup.h < s.player.y);
+  stepGame(s);
+  assert.equal(pickup.collected, true);
+  assert.equal(s.shakes, 1);
+});
 test('Pump-Attacke kostet 25 und zerstört eine ganze Pflichtbarriere', () => {
   const s = createGame(), gate = s.crates.find(c => c.gate);
   s.player.x = gate.x - 50; s.pump = 50;
