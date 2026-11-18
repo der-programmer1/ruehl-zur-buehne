@@ -1,4 +1,5 @@
 import { LEVELS, FLOOR } from './levels.mjs';
+import { startBench, stepBench } from './bench.mjs';
 
 export const PHYSICS = Object.freeze({ speed: 190, jump: 470, gravity: 1180, maxFall: 700 });
 export const overlaps = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -13,7 +14,7 @@ function snapshot(s, x = s.player.x) {
 export function loadLevel(s, index, pump = s.pump) {
   const level = LEVELS[index];
   Object.assign(s, {
-    level: index, mode: 'playing', pump, health: 3, stageTime: 0, camera: 0, checkpointIndex: -1,
+    level: index, mode: 'playing', pump, health: 3, stageTime: 0, camera: 0, checkpointIndex: -1, cutscene: null, resumeMode: null,
     player: { x: 80, y: FLOOR - 48, w: 24, h: 48, vx: 0, vy: 0, facing: 1, grounded: true, coyote: 0.12, buffer: 0, attack: 0, cooldown: 0, invulnerable: 0, knockback: 0 },
     crates: level.crates.map((c, id) => ({ ...c, id, broken: false })),
     pickups: level.shakes.map((p, id) => ({ ...p, id, w: 16, h: 24, collected: false })),
@@ -44,8 +45,8 @@ export function advanceLevel(s) {
 }
 
 export function setPaused(s, paused) {
-  if (paused && s.mode === 'playing') s.mode = 'paused';
-  else if (!paused && s.mode === 'paused') s.mode = 'playing';
+  if (paused && ['playing', 'bench-press'].includes(s.mode)) { s.resumeMode = s.mode; s.mode = 'paused'; }
+  else if (!paused && s.mode === 'paused') { s.mode = s.resumeMode || 'playing'; s.resumeMode = null; }
 }
 
 function respawn(s) {
@@ -76,8 +77,7 @@ export function attack(s) {
   if (s.mode !== 'playing' || p.cooldown > 0) return false;
   if (s.level === 2 && p.x + p.w >= level.goal - 45 && s.pump === 100) {
     s.score += 500 + s.health * 200;
-    s.mode = 'won';
-    emit(s, 'win');
+    startBench(s, 'won');
     return true;
   }
   if (s.pump < 25) { p.cooldown = 0.25; emit(s, 'empty'); return false; }
@@ -104,8 +104,9 @@ export function movingHazards(s) {
 }
 
 export function stepGame(s, input = {}, dt = 1 / 60) {
-  if (s.mode !== 'playing') return;
   dt = clamp(dt, 0, 1 / 30);
+  if (s.mode === 'bench-press') { stepBench(s, dt); return; }
+  if (s.mode !== 'playing') return;
   const p = s.player, level = LEVELS[s.level];
   s.elapsed += dt; s.stageTime += dt;
   for (const prop of ['attack', 'cooldown', 'invulnerable', 'knockback', 'buffer']) p[prop] = Math.max(0, p[prop] - dt);
@@ -175,7 +176,7 @@ export function stepGame(s, input = {}, dt = 1 / 60) {
     }
   }
   if (p.x + p.w >= level.goal) {
-    if (s.level < 2) { s.score += 500; s.mode = 'level-complete'; emit(s, 'complete'); }
+    if (s.level < 2) { s.score += 500; startBench(s, 'level-complete'); }
     else if (s.pump < 100 && Math.floor(s.stageTime * 2) !== Math.floor((s.stageTime - dt) * 2)) emit(s, 'need-pump');
   }
   s.camera += (clamp(p.x - 195, 0, level.width - 640) - s.camera) * Math.min(1, dt * 8);

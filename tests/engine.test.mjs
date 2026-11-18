@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame, stepGame, attack, loadLevel, hurt, retryLevel, advanceLevel, setPaused, movingHazards } from '../dist/js/engine.mjs';
 import { LEVELS, FLOOR } from '../dist/js/levels.mjs';
+import { BENCH, finishBench } from '../dist/js/bench.mjs';
 
 test('Shakes geben genau einmal Punkte und höchstens 100 Pump', () => {
   const s = createGame(); s.pump = 90;
@@ -58,15 +59,17 @@ test('Pause friert Physik und Spielzeit ein', () => {
 });
 test('Levelwechsel erhält Pump und Punkte, füllt Leben auf', () => {
   const s = createGame(); s.player.x = LEVELS[0].goal; s.pump = 75; s.health = 1;
-  stepGame(s); assert.equal(s.mode, 'level-complete'); assert.equal(s.score, 500);
+  stepGame(s); assert.equal(s.mode, 'bench-press'); assert.equal(s.score, 500);
+  assert.equal(advanceLevel(s), false); finishBench(s); assert.equal(s.mode, 'level-complete');
   advanceLevel(s); assert.equal(s.level, 1); assert.equal(s.pump, 75); assert.equal(s.health, 3);
   hurt(s); retryLevel(s); assert.equal(s.level, 1); assert.equal(s.score, 500);
 });
 test('Siegerpose erfordert letzte Bühne und volle 100 Pump', () => {
   const s = createGame(); loadLevel(s, 2); s.player.x = LEVELS[2].goal - 20; s.pump = 75;
   attack(s); assert.equal(s.mode, 'playing'); s.player.cooldown = 0; s.pump = 100;
-  attack(s); assert.equal(s.mode, 'won'); assert.equal(s.pump, 100);
+  attack(s); assert.equal(s.mode, 'bench-press'); assert.equal(s.cutscene.outcome, 'won'); assert.equal(s.pump, 100);
   const score = s.score; attack(s); assert.equal(s.score, score);
+  finishBench(s); assert.equal(s.mode, 'won'); attack(s); assert.equal(s.score, score);
 });
 test('jede Pflichtbarriere und das Finale haben erreichbare Spender davor', () => {
   for (const level of LEVELS) for (const x of [...level.gates, ...(level.index === 2 ? [level.goal] : [])]) {
@@ -80,8 +83,9 @@ test('jede Pflichtbarriere und das Finale haben erreichbare Spender davor', () =
 // This pilot uses the actual collision, resource, damage and checkpoint simulation.
 // It does not teleport, grant pump, skip levels or turn off hazards.
 export function playCampaign() {
-  const s = createGame(); let ticks = 0, wait = 0, jumping = 0, previousJump = false;
+  const s = createGame(), scenes = new Set(); let ticks = 0, wait = 0, jumping = 0, previousJump = false;
   while (s.mode !== 'won' && ticks < 120000) {
+    if (s.mode === 'bench-press') scenes.add(s.level);
     if (s.mode === 'dead') throw new Error(`Pilot gestorben: Level ${s.level + 1}, x=${s.player.x.toFixed(0)}`);
     if (s.mode === 'level-complete') { advanceLevel(s); wait = 0; jumping = 0; previousJump = false; }
     const p = s.player, l = LEVELS[s.level], front = p.x + p.w;
@@ -108,10 +112,37 @@ export function playCampaign() {
     previousJump = jump; s.events = []; ticks++;
     if (wait > 1000) throw new Error('Spender lädt nicht nach');
   }
-  return { state: s, ticks };
+  return { state: s, ticks, scenes: [...scenes] };
 }
 test('alle drei Levels sind mit normalen Bewegungen und Ressourcen durchspielbar', () => {
-  const { state, ticks } = playCampaign();
+  const { state, ticks, scenes } = playCampaign();
   assert.equal(state.mode, 'won', `Level ${state.level + 1}, x=${state.player.x}, ${ticks} Frames`);
   assert.equal(state.level, 2); assert.equal(state.pump, 100); assert.ok(state.score > 5000);
+  assert.deepEqual(scenes, [0, 1, 2]);
+});
+
+test('Bankdrücken zählt drei Wiederholungen und friert Spielzeit, Spieler und Ressourcen ein', () => {
+  const s = createGame(); s.player.x = LEVELS[0].goal; stepGame(s);
+  const before = structuredClone({ player: s.player, score: s.score, pump: s.pump, elapsed: s.elapsed, health: s.health });
+  for (let i = 0; i < Math.ceil(BENCH.duration * 60) + 2; i++) stepGame(s, { right: true, jumpPressed: true, actionPressed: true });
+  assert.equal(s.mode, 'level-complete'); assert.equal(s.cutscene.repetitions, 3);
+  assert.deepEqual({ player: s.player, score: s.score, pump: s.pump, elapsed: s.elapsed, health: s.health }, before);
+  assert.equal(s.events.filter(e => e.type === 'bench-rep').length, 3);
+  assert.equal(s.events.filter(e => e.type === 'bench-push').length, 3);
+  assert.equal(s.events.filter(e => e.type === 'complete').length, 1);
+});
+test('Bankdrückanimation lässt sich pausieren und an derselben Stelle fortsetzen', () => {
+  const s = createGame(); s.player.x = LEVELS[0].goal; stepGame(s);
+  for (let i = 0; i < 45; i++) stepGame(s);
+  setPaused(s, true); const elapsed = s.cutscene.elapsed;
+  for (let i = 0; i < 60; i++) stepGame(s);
+  assert.equal(s.cutscene.elapsed, elapsed); setPaused(s, false);
+  assert.equal(s.mode, 'bench-press'); stepGame(s); assert.ok(s.cutscene.elapsed > elapsed);
+});
+test('Überspringen beendet nur eine aktive Animation und vergibt keinen zusätzlichen Gewinn', () => {
+  const s = createGame(); assert.equal(finishBench(s), false);
+  loadLevel(s, 2, 100); s.player.x = LEVELS[2].goal; attack(s);
+  const score = s.score; assert.equal(finishBench(s), true); assert.equal(s.mode, 'won');
+  assert.equal(finishBench(s), false); assert.equal(s.score, score);
+  assert.equal(s.events.filter(e => e.type === 'win').length, 1);
 });

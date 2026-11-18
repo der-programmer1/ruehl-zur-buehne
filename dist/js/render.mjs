@@ -1,7 +1,9 @@
 import { LEVELS, FLOOR } from './levels.mjs';
 import { movingHazards } from './engine.mjs';
+import { drawAtlasRuhl } from './art.mjs';
+import { drawBenchPress } from './bench-render.mjs';
 
-const C = { ink: '#171a1c', skin: '#d99a76', light: '#f2c5a0', shadow: '#a86453', tank: '#eee9d7', yellow: '#f1bd4e', mint: '#96d6bd' };
+const C = { yellow: '#f1bd4e', mint: '#96d6bd' };
 const rect = (ctx, x, y, w, h, color) => { ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
 function text(ctx, value, x, y, color = '#d5d7cd', size = 8, align = 'left') {
   ctx.fillStyle = color; ctx.font = `bold ${size}px monospace`; ctx.textAlign = align; ctx.fillText(value, Math.round(x), Math.round(y));
@@ -9,58 +11,25 @@ function text(ctx, value, x, y, color = '#d5d7cd', size = 8, align = 'left') {
 
 export function drawShaker(ctx, x, y, t = 0, scale = 1) {
   ctx.save(); ctx.translate(Math.round(x), Math.round(y + Math.sin(t * 3 + x) * 2)); ctx.scale(scale, scale);
-  rect(ctx, 3, 0, 10, 3, '#e6e1cd'); rect(ctx, 5, -3, 5, 3, '#e6e1cd');
-  rect(ctx, 1, 3, 14, 3, '#252c28'); rect(ctx, 2, 6, 12, 16, '#75beaa');
-  rect(ctx, 4, 6, 3, 14, '#b5edcf'); rect(ctx, 12, 6, 2, 14, '#478a7d');
-  rect(ctx, 2, 13, 12, 5, '#e5e6cb'); rect(ctx, 7, 13, 3, 5, '#315c51');
-  rect(ctx, 4, 22, 8, 2, '#385d53'); ctx.restore();
+  // A wide sports shaker: flip spout, screw lid, tapered cup and creamy whey.
+  rect(ctx, 3, 3, 18, 25, '#172221'); rect(ctx, 5, 28, 14, 3, '#172221');
+  rect(ctx, 4, 6, 16, 19, '#d8e7df'); rect(ctx, 6, 25, 12, 4, '#c8b48d');
+  rect(ctx, 5, 12, 14, 13, '#dfc69b'); rect(ctx, 6, 12, 12, 2, '#f7dfb2');
+  rect(ctx, 5, 22, 14, 3, '#baa17c'); rect(ctx, 6, 7, 3, 15, '#f5f9e4');
+  rect(ctx, 18, 7, 2, 17, '#7e9c93');
+  for (let n = 0; n < 3; n++) rect(ctx, 15, 8 + n * 3, n % 2 ? 2 : 3, 1, '#6c8b81');
+  rect(ctx, 1, 1, 22, 5, '#172221'); rect(ctx, 2, 0, 20, 4, '#df6748');
+  rect(ctx, 4, 0, 15, 1, '#ffb278'); rect(ctx, 4, 4, 16, 2, '#9c432f');
+  rect(ctx, 6, -4, 8, 4, '#202c29'); rect(ctx, 7, -5, 6, 3, '#ed8660');
+  rect(ctx, 15, -5, 6, 2, '#202c29'); rect(ctx, 19, -4, 2, 5, '#ed8660');
+  rect(ctx, 3, 15, 18, 8, '#f8efd1'); text(ctx, 'WHEY', 12, 21, '#3f4a39', 6, 'center');
+  rect(ctx, 7, 27, 9, 1, '#f9dfb0');
+  if (t && Math.sin(t * 3 + x) > 0.6) { rect(ctx, -4, 5, 5, 1, '#f4da91'); rect(ctx, -2, 3, 1, 5, '#f4da91'); }
+  ctx.restore();
 }
 
-export function drawRuhl(ctx, x, y, { time = 0, walking = false, airborne = false, facing = 1, attack = false, pose = false, scale = 1, hurt = false } = {}) {
-  ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(facing * scale, scale);
-  if (hurt) ctx.globalAlpha = 0.45;
-  const stride = walking && !airborne ? Math.round(Math.sin(time * 17) * 5) : 0;
-  const bob = walking && !airborne ? Math.abs(stride) * 0.25 : Math.sin(time * 2) * 0.6;
-  ctx.translate(0, Math.round(-bob));
-  // Boots, shorts and enormous shoulders are drawn by hand on a pixel grid.
-  rect(ctx, -12 + stride, -12, 10, 12, '#282d32'); rect(ctx, 3 - stride, -12, 10, 12, '#383d40');
-  rect(ctx, -15 + stride, -3, 13, 5, '#15191c'); rect(ctx, 3 - stride, -3, 15, 5, '#15191c');
-  rect(ctx, -14 + stride, -3, 11, 2, '#6d7370'); rect(ctx, 4 - stride, -3, 10, 2, '#92978a');
-  rect(ctx, -15, -23, 29, 14, '#652c32'); rect(ctx, -11, -22, 8, 11, '#8a4140');
-  rect(ctx, -15, -25, 29, 4, '#202426'); rect(ctx, -1, -25, 3, 4, '#baad7b');
-  rect(ctx, -17, -44, 35, 21, C.shadow); rect(ctx, -14, -44, 29, 21, C.skin);
-  rect(ctx, -13, -42, 27, 19, C.tank); rect(ctx, -6, -42, 13, 4, C.skin);
-  rect(ctx, -9, -37, 20, 3, '#faf4df'); rect(ctx, -11, -34, 23, 3, '#d8d1ba');
-  rect(ctx, -4, -32, 10, 2, '#404644'); rect(ctx, -2, -30, 6, 3, '#404644');
-  rect(ctx, -2, -28, 5, 1, C.yellow);
-  if (pose) {
-    for (const side of [-1, 1]) {
-      ctx.save(); ctx.scale(side, 1);
-      rect(ctx, 15, -46, 13, 13, C.shadow); rect(ctx, 17, -49, 13, 13, C.skin);
-      rect(ctx, 22, -54, 9, 11, C.light); rect(ctx, 23, -58, 8, 5, C.skin);
-      rect(ctx, 17, -46, 8, 4, C.light); ctx.restore();
-    }
-  } else if (attack) {
-    rect(ctx, -25, -43, 12, 15, C.shadow); rect(ctx, -24, -42, 10, 10, C.skin);
-    rect(ctx, 14, -44, 17, 15, C.skin); rect(ctx, 26, -41, 17, 11, C.light);
-    rect(ctx, 39, -43, 10, 13, C.skin); rect(ctx, 41, -40, 7, 2, C.light);
-    rect(ctx, 15, -43, 10, 4, C.light); rect(ctx, 24, -31, 17, 3, C.shadow);
-  } else {
-    rect(ctx, -25, -44, 13, 14, C.shadow); rect(ctx, -25, -43, 12, 12, C.skin);
-    rect(ctx, -25, -32, 10, 9, C.skin); rect(ctx, -23, -23, 8, 5, C.shadow);
-    rect(ctx, -23, -43, 7, 4, C.light);
-    rect(ctx, 14, -44, 13, 15, C.skin); rect(ctx, 15, -43, 9, 5, C.light);
-    rect(ctx, 19, -32, 10, 10, C.skin); rect(ctx, 20, -24, 9, 6, C.shadow);
-    rect(ctx, 21, -26, 6, 5, C.light);
-  }
-  // Shaved head, heavy brow, beard and broad neck.
-  rect(ctx, -5, -49, 13, 8, C.shadow); rect(ctx, -5, -49, 10, 7, C.skin);
-  rect(ctx, -8, -65, 16, 18, C.shadow); rect(ctx, -5, -68, 12, 19, C.skin);
-  rect(ctx, -5, -67, 9, 8, C.light); rect(ctx, 7, -61, 3, 9, C.skin);
-  rect(ctx, -7, -59, 2, 7, '#744d44'); rect(ctx, 1, -60, 7, 2, '#513e36');
-  rect(ctx, 4, -58, 2, 2, C.ink); rect(ctx, 7, -56, 4, 3, C.light);
-  rect(ctx, 1, -53, 8, 2, '#5c4137'); rect(ctx, -1, -51, 9, 4, '#65493f');
-  rect(ctx, 3, -51, 4, 1, '#f7d9b9'); ctx.restore();
+export function drawRuhl(ctx, x, y, options = {}) {
+  drawAtlasRuhl(ctx, x, y, options);
 }
 
 function dumbbell(ctx, x, y, size = 1, color = '#656a65') {
@@ -165,6 +134,9 @@ export class Renderer {
   }
   draw(s, time, dt, title = false) {
     const ctx = this.ctx, level = LEVELS[s.level], frozen = ['paused', 'dead', 'level-complete'].includes(s.mode);
+    if (s.mode === 'bench-press' || (s.mode === 'paused' && s.resumeMode === 'bench-press')) {
+      drawBenchPress(ctx, s, this.reduced); return;
+    }
     ctx.imageSmoothingEnabled = false;
     ctx.save();
     if (this.shake > 0) { ctx.translate(Math.round((Math.random() - 0.5) * this.shake), Math.round((Math.random() - 0.5) * this.shake)); this.shake *= 0.82; if (this.shake < 0.2) this.shake = 0; }
@@ -230,7 +202,7 @@ export class Renderer {
       const grad = ctx.createLinearGradient(0, 0, 640, 0); grad.addColorStop(0, '#10191df5'); grad.addColorStop(0.55, '#10191d99'); grad.addColorStop(1, '#10191d00');
       ctx.fillStyle = grad; ctx.fillRect(0, 0, 640, 360);
       rect(ctx, 407, 311, 140, 6, '#0e171c'); rect(ctx, 420, 305, 115, 6, '#4d5750');
-      drawRuhl(ctx, 478, 302, { time, pose: true, scale: 2.9 });
+      drawRuhl(ctx, 478, 302, { time, pose: true, scale: 2.45 });
       text(ctx, 'MARKUS RÜHL', 479, 336, '#abb8a7', 9, 'center');
     }
     for (const effect of this.effects) if (effect.screen) { ctx.globalAlpha = Math.min(1, effect.life); rect(ctx, effect.x, effect.y, effect.size, effect.size * 2, effect.color); }

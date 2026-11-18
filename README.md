@@ -4,7 +4,7 @@
 
 [Im Browser spielen](https://der-programmer1.github.io/ruehl-zur-buehne/)
 
-Ein inoffizielles Fan-Jump’n’Run mit einem selbst gezeichneten Pixel-Markus Rühl.
+Ein inoffizielles Fan-Jump’n’Run mit eigens erstellten Pixel-Sprites von Markus Rühl.
 Sammle Proteinshakes, setze deinen Pump gegen Kisten und Cardio-Bots ein und
 erreiche die Wettkampfbühne. Dort brauchst du 100 Pump für deine Siegerpose.
 
@@ -23,6 +23,9 @@ erreiche die Wettkampfbühne. Dort brauchst du 100 Pump für deine Siegerpose.
 - Checkpoints stellen bei einem Sturz Ressourcen, Kisten und Shakes gemeinsam wieder her.
 - Ein verlorenes Level lässt sich neu beginnen; der komplette Lauf ebenfalls.
 - Auf der letzten Bühne bei 100 Pump die Kraftaktion für die Siegerpose drücken.
+- Nach jedem der drei Levels folgt eine animierte Bankdrück-Sequenz: drei Wiederholungen,
+  steigendes Hantelgewicht, bewegliche Arme und Hantel sowie Atem- und Metallgeräusche.
+  Die Sequenz lässt sich pausieren oder mit WEITER abkürzen. Die Laufzeit bleibt dabei stehen.
 - Bestwert und Ton werden unter `ruehl-zur-buehne:v1` lokal gespeichert. Das Spiel
   bleibt auch bei gesperrtem Browser-Speicher spielbar. Keine Anmeldung, Server-Datenbank
   oder gemeinsame Rangliste. Sound ist zunächst aus und kann eingeschaltet werden.
@@ -30,9 +33,11 @@ erreiche die Wettkampfbühne. Dort brauchst du 100 Pump für deine Siegerpose.
 ## Technik und Prüfung
 
 Statisches HTML, CSS und JavaScript mit Canvas und Web Audio, ohne Laufzeit-Abhängigkeiten.
-Alle Bilder, Pixelzeichnungen und Schriften werden lokal ausgeliefert. Die Pixel-Figur,
-Umgebungen und Effekte werden direkt auf dem Canvas gezeichnet. Die drei Level sind
-fest gestaltet. Texte und synthetische Geräusche sind für dieses Spiel erstellt.
+Alle Bilder, Pixelzeichnungen und Schriften werden lokal ausgeliefert. Die Figur verwendet
+einen transparenten Sprite-Atlas mit sechs Posen. Umgebung, Shaker, Effekte und die
+Bankdrück-Sequenz werden auf dem Canvas animiert. Die drei Level sind fest gestaltet.
+Texte und synthetische Geräusche sind für dieses Spiel erstellt. Details zu den Grafiken
+und ihren Referenzen stehen in [ART.md](ART.md).
 
 Mit Node.js 22 oder neuer:
 
@@ -45,8 +50,14 @@ python3 -m http.server 8080 --directory dist
 Die Tests prüfen Ressourcen, Kollisionen, Gegner, Checkpoints, Niederlage, Pause,
 Levelwechsel, Siegerpose, Mehrfinger-Eingaben und Browser-Speicher. Ein automatischer
 Pilot durchläuft die vollständige Kampagne ohne Teleportieren oder zusätzliche Ressourcen.
+Die Browser-Suite spielt die Kampagne mit echten Tastatureingaben und beschleunigter Uhr
+bis zum Sieg, prüft alle drei Bankdrück-Sequenzen und speichert mehrere Animationsphasen.
 GitHub Actions prüft Änderungen und veröffentlicht `dist/` nach einem Push auf `main`.
 Relative Assetpfade unterstützen den GitHub-Pages-Unterpfad.
+
+Für die Browser-Tests nach `npm ci` Playwright-Browser installieren und
+`npm run test:browser` ausführen. `RUEHL_BROWSERS=chromium,webkit` prüft beide Engines;
+GitHub Actions führt diese vollständige Prüfung vor der Veröffentlichung aus.
 
 ## Schriften
 

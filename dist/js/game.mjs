@@ -3,6 +3,8 @@ import { LEVELS } from './levels.mjs';
 import { InputState } from './input.mjs';
 import { Renderer } from './render.mjs';
 import { readPreferences, writePreferences } from './storage.mjs';
+import { loadArt } from './art.mjs';
+import { finishBench } from './bench.mjs';
 
 const $ = id => document.getElementById(id);
 const canvas = $('game');
@@ -45,6 +47,18 @@ function sound(type) {
   if (type === 'empty') tone(65, 0.12, 0.02);
   if (type === 'checkpoint' || type === 'complete') { tone(390, 0.1); tone(520, 0.15, 0.03, 0.1); tone(780, 0.2, 0.03, 0.2); }
   if (type === 'win') [260, 330, 390, 520, 650, 780].forEach((f, i) => tone(f, 0.22, 0.03, i * 0.12));
+  if (type === 'bench-start') { tone(85, .2, .04, 0, 35); tone(390, .25, .015, .03, 110); }
+  if (type === 'bench-rep') { tone(160, .12, .03); tone(360, .18, .018, .08, 180); }
+  if (type === 'bench-push') effort();
+}
+
+function effort() {
+  if (!preferences.sound || !audioContext || audioContext.state !== 'running') return;
+  const length = Math.floor(audioContext.sampleRate * .26), buffer = audioContext.createBuffer(1, length, audioContext.sampleRate), data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / length);
+  const source = audioContext.createBufferSource(), filter = audioContext.createBiquadFilter(), gain = audioContext.createGain();
+  source.buffer = buffer; filter.type = 'lowpass'; filter.frequency.value = 900; gain.gain.value = .06;
+  source.connect(filter); filter.connect(gain); gain.connect(audioContext.destination); source.start();
 }
 
 function toast(message, seconds = 3) {
@@ -60,15 +74,18 @@ function start() {
   canvas.focus({ preventScroll: true });
 }
 function pause() {
-  setPaused(game, game.mode === 'playing'); clearControls(); accumulator = 0;
+  setPaused(game, game.mode !== 'paused'); clearControls(); accumulator = 0;
 }
 function syncOverlay() {
   const mode = game.mode;
   $('stage').dataset.mode = mode;
-  $('overlay').hidden = mode === 'playing';
-  $('pause').disabled = !['playing', 'paused'].includes(mode);
+  document.body.dataset.bench = String(mode === 'bench-press' || (mode === 'paused' && game.resumeMode === 'bench-press'));
+  $('overlay').hidden = ['playing', 'bench-press'].includes(mode);
+  $('bench-ui').hidden = mode !== 'bench-press';
+  $('pause').disabled = !['playing', 'paused', 'bench-press'].includes(mode);
   $('pause').setAttribute('aria-label', mode === 'paused' ? 'Spiel fortsetzen' : 'Spiel pausieren');
   $('secondary').hidden = !['paused', 'dead'].includes(mode);
+  if (mode === 'bench-press') { clearControls(); $('toast').classList.remove('visible'); toastUntil = 0; return; }
   if (mode === 'playing' || mode === 'title') return;
   clearControls();
   const headings = {
@@ -103,6 +120,15 @@ function updateHUD() {
   $('level-name').textContent = LEVELS[game.level].name.toUpperCase();
   $('stage-number').textContent = String(game.level + 1).padStart(2, '0');
   $('level-hint').textContent = game.level === 2 ? '100 PUMP. EINE POSE. DEIN POKAL.' : LEVELS[game.level].kicker;
+  if (game.mode === 'bench-press') {
+    $('level-hint').textContent = 'DER LEVEL IST DURCH. DER SATZ NOCH NICHT.';
+    $('bench-caption').textContent = `${String(game.level + 1).padStart(2, '0')} / ${LEVELS[game.level].name.toUpperCase()} GESCHAFFT`;
+    $('bench-weight').textContent = game.cutscene.weight;
+    const reps = `${game.cutscene.repetitions} / 3`;
+    if ($('bench-reps').textContent !== reps) $('bench-reps').textContent = reps;
+    $('skip-bench').disabled = game.cutscene.elapsed < .9;
+    document.querySelectorAll('.rep-lights i').forEach((light, i) => light.classList.toggle('done', i < game.cutscene.repetitions));
+  }
   $('best').textContent = preferences.bestScore ? formatScore(preferences.bestScore) : 'NOCH OFFEN';
   document.querySelectorAll('[data-level]').forEach(li => {
     li.classList.toggle('active', Number(li.dataset.level) === game.level);
@@ -120,11 +146,12 @@ $('primary').addEventListener('click', () => {
 });
 $('secondary').addEventListener('click', start);
 $('pause').addEventListener('click', pause);
+$('skip-bench').addEventListener('click', () => { if (game.mode === 'bench-press' && game.cutscene.elapsed >= .9) finishBench(game); });
 $('sound').addEventListener('click', () => { preferences.sound = !preferences.sound; unlockAudio(); updateSound(); writePreferences(storage, preferences); if (preferences.sound) tone(520); });
 const keys = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', Space: 'jump', ArrowUp: 'jump', KeyW: 'jump', KeyE: 'action' };
 window.addEventListener('keydown', event => {
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.metaKey || event.ctrlKey || event.altKey) return;
-  if (event.code === 'Escape' && ['playing', 'paused'].includes(game.mode)) { event.preventDefault(); if (!event.repeat) pause(); return; }
+  if (event.code === 'Escape' && ['playing', 'paused', 'bench-press'].includes(game.mode)) { event.preventDefault(); if (!event.repeat) pause(); return; }
   if (keys[event.code] && game.mode === 'playing') { event.preventDefault(); if (!event.repeat) input.press(event.code, keys[event.code]); }
 });
 window.addEventListener('keyup', event => input.release(event.code));
@@ -148,7 +175,7 @@ for (const button of document.querySelectorAll('[data-action]')) {
 
 function frame(now) {
   const dt = Math.min((now - lastTime) / 1000, 0.1); lastTime = now;
-  if (game.mode === 'playing') {
+  if (['playing', 'bench-press'].includes(game.mode)) {
     accumulator += dt;
     while (accumulator >= 1 / 60) { stepGame(game, input.consume(), 1 / 60); accumulator -= 1 / 60; }
   } else accumulator = 0;
@@ -166,4 +193,9 @@ function frame(now) {
 
 // A read-only snapshot makes automated input and regression checks reproducible.
 export function getSnapshot() { return structuredClone(game); }
-updateSound(); updateHUD(); requestAnimationFrame(frame);
+updateSound(); updateHUD();
+const initialButtonText = $('primary').textContent;
+$('primary').disabled = true; $('primary').textContent = 'RÜHL MACHT SICH BEREIT …';
+await loadArt();
+$('primary').disabled = false; $('primary').textContent = initialButtonText;
+lastTime = performance.now(); requestAnimationFrame(frame);

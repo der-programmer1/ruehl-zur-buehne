@@ -24,7 +24,12 @@ for (const file of await readdir(resolve(root, 'js'))) {
   assert.equal(syntax.status, 0, syntax.stderr);
   const source = await readFile(path, 'utf8');
   for (const match of source.matchAll(/from ['"]([^'"]+)['"]/g)) await reference(path, match[1]);
+  for (const match of source.matchAll(/new URL\(['"]([^'"]+)['"],\s*import\.meta\.url\)/g)) await reference(path, match[1]);
   for (const match of source.matchAll(/\$\('([^']+)'\)/g)) assert.ok(ids.includes(match[1]), `Fehlendes Element: ${match[1]}`);
 }
+const atlas = await readFile(resolve(root, 'assets/ruhl-atlas.png'));
+assert.ok(atlas.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])));
+assert.equal(atlas.readUInt32BE(16), 1536, 'Sprite-Atlas: drei Spalten zu je 512 Pixeln');
+assert.equal(atlas.readUInt32BE(20), 1024, 'Sprite-Atlas: zwei Reihen zu je 512 Pixeln');
 assert.doesNotMatch(html, /<(?:script|img)\b[^>]*src="https?:/);
 console.log('Syntax, lokale Assets, DOM-Verweise und GitHub-Pages-Unterpfade geprüft.');

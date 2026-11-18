@@ -35,6 +35,11 @@
       <div class="stage" id="stage" data-mode="title">
         <canvas id="game" width="640" height="360" aria-label="Pixel-Jump’n’Run mit Markus Rühl. Steuerung: A und D laufen, Leertaste springen, E für Pump."></canvas>
         <div class="scanlines" aria-hidden="true"></div>
+        <div id="bench-ui" class="bench-ui" hidden role="region" aria-label="Bankdrücken nach dem Level">
+          <div class="bench-heading"><p id="bench-caption">LEVEL GESCHAFFT</p><h2>NOCH EINEN SATZ.</h2></div>
+          <div class="bench-weight"><strong id="bench-weight">100</strong><span>KG AUF DER STANGE</span></div>
+          <div class="bench-bottom"><div class="bench-reps"><span>SAUBERE WIEDERHOLUNGEN</span><strong id="bench-reps" role="status" aria-live="polite">0 / 3</strong><div class="rep-lights" aria-hidden="true"><i></i><i></i><i></i></div></div><button id="skip-bench" class="bench-continue" aria-label="Bankdrückanimation überspringen">WEITER</button></div>
+        </div>
         <div class="overlay" id="overlay" role="dialog" aria-labelledby="overlay-title" aria-describedby="overlay-copy">
           <div class="overlay-content">
             <p class="overlay-kicker" id="overlay-kicker"><span></span> MIT MARKUS RÜHL</p>

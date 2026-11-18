@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, webkit } from 'playwright';
+import { verifyCampaign } from './campaign-browser.mjs';
 
 const root = fileURLToPath(new URL('../dist/', import.meta.url));
 const out = fileURLToPath(new URL('../test-results/', import.meta.url));
@@ -44,6 +45,7 @@ try {
       await page.getByRole('button', { name: /MASSEPHASE STARTEN/ }).waitFor();
       await noOverflow(page);
       await page.screenshot({ path: `${out}/${name}-01-start.png`, fullPage: true });
+      await page.locator('.game-panel').screenshot({ path: `${out}/${name}-start-panel.png` });
       await page.getByRole('button', { name: /MASSEPHASE STARTEN/ }).click();
       await page.keyboard.down('d');
       try {
@@ -113,6 +115,7 @@ try {
       await phone.screenshot({ path: `${out}/${name}-05-landscape.png`, fullPage: true });
       assert.deepEqual(errors, []); assert.deepEqual(missing, []);
       await mobile.close();
+      if (process.env.RUEHL_CAMPAIGN !== '0') await verifyCampaign(browser, base, out, name);
       console.log(`${name}: Start, Tastatur, Sprung, Pump, Pause, Ton, Touch, Größenwechsel und Screenshots bestanden.`);
     } finally { await browser.close(); }
   }
