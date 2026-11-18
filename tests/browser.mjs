@@ -40,13 +40,14 @@ try {
       page.on('pageerror', e => errors.push(e.message));
       page.on('response', response => { if (response.status() >= 400 && response.url().startsWith(base)) missing.push(response.url()); });
       await page.goto(base); await page.bringToFront(); await page.evaluate(() => document.fonts.ready);
+      await page.evaluate(async url => { window.readGameForTest = (await import(url)).getSnapshot; }, moduleURL);
       await page.getByRole('button', { name: /MASSEPHASE STARTEN/ }).waitFor();
       await noOverflow(page);
       await page.screenshot({ path: `${out}/${name}-01-start.png`, fullPage: true });
       await page.getByRole('button', { name: /MASSEPHASE STARTEN/ }).click();
       await page.keyboard.down('d');
       try {
-        await page.waitForFunction(async url => (await import(url)).getSnapshot().player.x > 270, moduleURL, { timeout: 12000, polling: 100 });
+        await page.waitForFunction(() => window.readGameForTest().player.x > 270, undefined, { timeout: 12000, polling: 100 });
       } catch (error) {
         console.error('Bewegungsdiagnose', name, await snapshot(page), await page.evaluate(() => ({ hidden: document.hidden, focus: document.hasFocus() })));
         throw error;
@@ -54,12 +55,12 @@ try {
       await page.keyboard.up('d');
       let s = await snapshot(page); assert.ok(s.player.x > 240); assert.ok(s.shakes >= 1); assert.ok(s.pump >= 25);
       await page.keyboard.down('Space');
-      await page.waitForFunction(async url => (await import(url)).getSnapshot().player.y < 245, moduleURL, { timeout: 5000, polling: 50 });
+      await page.waitForFunction(() => window.readGameForTest().player.y < 245, undefined, { timeout: 5000, polling: 50 });
       s = await snapshot(page); assert.ok(s.player.y < 245, 'jump must lift the player');
       await page.keyboard.up('Space'); await page.waitForTimeout(650);
       const before = (await snapshot(page)).pump;
       await page.keyboard.press('e');
-      await page.waitForFunction(async ({url, before}) => (await import(url)).getSnapshot().pump === before - 25, {url: moduleURL, before}, { timeout: 5000, polling: 50 });
+      await page.waitForFunction(before => window.readGameForTest().pump === before - 25, before, { timeout: 5000, polling: 50 });
       assert.equal((await snapshot(page)).pump, before - 25);
       await page.keyboard.press('Escape'); await page.waitForTimeout(80);
       const paused = await snapshot(page); assert.equal(paused.mode, 'paused');
