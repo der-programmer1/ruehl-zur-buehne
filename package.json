@@ -1,0 +1,12 @@
+{
+  "name": "ruehl-zur-buehne",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ein wuchtiges Pixel-Jump’n’Run: Shakes sammeln, Pump einsetzen, Pokal holen.",
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": { "node": ">=22" }
+}

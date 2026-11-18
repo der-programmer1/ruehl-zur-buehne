@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11191b">
+  <meta name="description" content="Als Pixel-Markus Rühl Shakes sammeln, mit Pump Hindernisse zerlegen und den Pokal holen. Kostenloses Jump’n’Run für PC und Handy.">
+  <meta property="og:title" content="Rühl zur Bühne · Erst der Pump. Dann der Pokal.">
+  <meta property="og:description" content="Drei Levels. Ein Pokal. Volle Masse. Das Pixel-Jump’n’Run mit Markus Rühl.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://der-programmer1.github.io/ruehl-zur-buehne/">
+  <meta property="og:image" content="https://der-programmer1.github.io/ruehl-zur-buehne/screenshot.png">
+  <title>Rühl zur Bühne · Das Pixel-Jump’n’Run</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./js/game.mjs"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Rühl zur Bühne, Startseite"><svg width="28" height="32" viewBox="0 0 28 32" aria-hidden="true"><path d="M10 1h8v4h4v4H6V5h4zM5 11h18l-2 20H7z" fill="currentColor"/><path d="M12 15h4v5h4v4h-4v4h-4v-4H8v-4h4z" fill="#172122"/></svg><span>RÜHL<span class="brand-slash">/</span><span class="brand-small">ZUR BÜHNE</span></span></a>
+    <div class="header-right"><span class="edition">PIXEL EDITION <span>01</span></span><a href="https://der-programmer1.github.io/AppShelf/">AppShelf</a></div>
+  </header>
+  <main>
+    <div class="game-heading">
+      <div><p class="eyebrow">DREI LEVELS. EIN POKAL. VOLLE MASSE.</p><h1>RÜHL <span>ZUR BÜHNE.</span></h1></div>
+      <ol class="roadmap" aria-label="Dein Weg zum Pokal"><li class="active" data-level="0"><span>01</span>KELLER-GYM</li><li data-level="1"><span>02</span>MESSEHALLE</li><li data-level="2"><span>03</span>BÜHNE</li></ol>
+    </div>
+    <section class="game-panel" aria-label="Spielbereich">
+      <div class="hud">
+        <div class="health-block"><span class="hud-label">LEBEN</span><span id="hearts" class="hearts" role="img" aria-label="3 von 3 Leben">♥ ♥ ♥</span></div>
+        <div class="score-block"><span class="hud-label">PUNKTE</span><strong id="score">000000</strong></div>
+        <div class="pump-block"><div class="pump-label"><span class="hud-label">DEIN PUMP</span><strong><span id="pump-value">0</span><span class="pump-max"> / 100</span></strong></div><div id="pump-meter" class="pump-meter" role="progressbar" aria-label="Pump" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="pump-fill"></span></div></div>
+        <div class="hud-actions"><button id="sound" class="icon-button" aria-label="Ton einschalten" aria-pressed="false" title="Ton umschalten"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path id="sound-waves" d="m17 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button><button id="pause" class="icon-button" aria-label="Spiel pausieren" title="Pause (Esc)" disabled><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M4 3h3v12H4zm7 0h3v12h-3z" fill="currentColor"/></svg></button></div>
+      </div>
+      <div class="stage" id="stage" data-mode="title">
+        <canvas id="game" width="640" height="360" aria-label="Pixel-Jump’n’Run mit Markus Rühl. Steuerung: A und D laufen, Leertaste springen, E für Pump."></canvas>
+        <div class="scanlines" aria-hidden="true"></div>
+        <div class="overlay" id="overlay" role="dialog" aria-labelledby="overlay-title" aria-describedby="overlay-copy">
+          <div class="overlay-content">
+            <p class="overlay-kicker" id="overlay-kicker"><span></span> MIT MARKUS RÜHL</p>
+            <h2 id="overlay-title">ERST DER PUMP.<br><em>DANN DER POKAL.</em></h2>
+            <p id="overlay-copy">Shakes sammeln. Hindernisse zerlegen.<br>Bring die Masse auf die Bühne.</p>
+            <button class="play-button" id="primary">MASSEPHASE STARTEN <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true"><path d="m6 3 9 6-9 6z" fill="currentColor"/></svg></button>
+            <button id="secondary" class="secondary-button" hidden>NOCH EINMAL VON VORN</button>
+            <p class="overlay-note" id="overlay-note">SHAKES GEBEN KRAFT. DU GIBST GAS.</p>
+          </div>
+        </div>
+        <p id="toast" class="toast" role="status" aria-live="polite"></p>
+        <div class="stage-number" aria-hidden="true"><span id="stage-number">01</span> / 03</div>
+      </div>
+      <div class="level-footer"><span><i></i><span id="level-name">KELLER-GYM</span></span><span id="level-hint">DEIN WEG ZUM POKAL BEGINNT HIER.</span><span class="run-time" id="time">00:00</span></div>
+    </section>
+    <div class="touch-controls" aria-label="Touch-Steuerung">
+      <div class="movement"><button data-action="left" aria-label="Nach links laufen">A<span>LINKS</span></button><button data-action="right" aria-label="Nach rechts laufen">D<span>RECHTS</span></button></div>
+      <div class="abilities"><button data-action="jump" aria-label="Springen">SPRUNG<span>HALTEN = HÖHER</span></button><button data-action="action" class="pump-button" aria-label="Pump-Aktion">PUMP<span>25 PUMP</span></button></div>
+    </div>
+    <div class="below-game">
+      <div class="key-guide" aria-label="Tastatur-Steuerung"><span><kbd>A</kbd><kbd>D</kbd> LAUFEN</span><span><kbd class="space-key">LEER</kbd> SPRINGEN</span><span><kbd>E</kbd> PUMP</span><span><kbd>ESC</kbd> PAUSE</span></div>
+      <div class="best">DEIN REKORD <strong id="best">—</strong></div>
+    </div>
+    <p class="game-tip"><span>DER PLAN</span> Shakes geben dir 25 Pump. Kraftaktionen machen den Weg frei. Am Spender lädst du nach. Auf der Bühne: 100 Pump und eine Siegerpose.</p>
+    <noscript><p class="no-script">Dieses Spiel benötigt JavaScript. Bitte aktiviere es in deinem Browser.</p></noscript>
+  </main>
+  <footer class="site-footer"><span>EIN INOFFIZIELLES FAN-SPIEL VON PATRICE.</span><div><a href="https://github.com/der-programmer1/ruehl-zur-buehne" target="_blank" rel="noopener noreferrer">Quellcode</a><a href="https://der-programmer1.github.io/patrice-lab/">Patrice / Lab</a></div></footer>
+</body>
+</html>
