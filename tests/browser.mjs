@@ -100,7 +100,16 @@ try {
         await phone.waitForTimeout(100); assert.equal((await snapshot(phone)).player.vx, 0);
       }
       await phone.screenshot({ path: `${out}/${name}-04-mobile-game.png`, fullPage: true });
-      await phone.setViewportSize({ width: 844, height: 390 }); await noOverflow(phone);
+      await phone.setViewportSize({ width: 844, height: 390 });
+      await phone.waitForTimeout(350); await noOverflow(phone);
+      assert.ok(await phone.locator('.touch-controls').isVisible(), JSON.stringify(await phone.evaluate(() => ({
+        touch: navigator.maxTouchPoints, coarse: matchMedia('(any-pointer: coarse)').matches,
+        width: innerWidth, height: innerHeight, controls: getComputedStyle(document.querySelector('.touch-controls')).display
+      }))));
+      assert.ok(await phone.locator('.stage').evaluate(el => el.getBoundingClientRect().width >= innerWidth - 2), 'landscape game must fill the available width');
+      for (const button of await phone.locator('[data-action]').all()) {
+        const box = await button.boundingBox(); assert.ok(box.y >= 0 && box.y + box.height <= 391, 'landscape controls must remain inside the screen');
+      }
       await phone.screenshot({ path: `${out}/${name}-05-landscape.png`, fullPage: true });
       assert.deepEqual(errors, []); assert.deepEqual(missing, []);
       await mobile.close();
